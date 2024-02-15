@@ -174,8 +174,8 @@ const app = {
     },
   },
   created() {  
-    this.checkLogin();
-    this.getProducts(); 
+    //this.checkLogin();
+    //this.getProducts(); 
   },
   components: {
     pagination,
