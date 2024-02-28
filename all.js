@@ -14,16 +14,15 @@ const app = {
     return { 
       temp:{},
       products:[],
+      data_id: '',
+      data_name: '',
       pages: {},
+      user: {
+        username: '',
+        password: '',
+      },
       addNew: false,
       newProduct :{
-        // title: '',
-        // category: '',
-        // origin_price: 0,
-        // price: 300,
-        // unit: "個",
-        // description: "Sit down please 名設計師設計",
-        // content: "這是內容",
          is_enabled: 1,
          imageUrl: "",
          imagesUrl: [
@@ -34,7 +33,7 @@ const app = {
   },
 
   mounted() {
-    delProductModal = new bootstrap.Modal(document.getElementById('delProductModal'), {
+     delProductModal = new bootstrap.Modal(document.getElementById('delProductModal'), {
       keyboard: false
     });
   },
@@ -42,27 +41,17 @@ const app = {
   methods: {
 
     login() {
-      const username = document.querySelector('#email').value;
-      const password = document.querySelector('#password').value;
-      console.log(username,password);
-      const users = {
-        username,
-        password
-      }
-      
-      
+
       // #2 發送 API 至遠端並登入（並儲存 Token）
-      axios.post(`${url}/v2/admin/signin`, users)
+      axios.post(`${url}/v2/admin/signin`, this.user)
         .then((res) => {
-          console.log(res);
-          console.log(username,password);
+          alert(res.data.message);
+          const { token, expired } = res.data;          // 寫入 cookie token
+          document.cookie = `newToken=${token}; expires=${new Date(expired)};`;    // expires 設置有效時間
           window.location.href = 'admin_products.html'; //跳轉到products頁面
-          const { token, expired } = res.data;
-          document.cookie = `newToken=${token}; expires=${new Date(expired)};`;
         })
         .catch((error) => {
-          console.log(username,password);
-          console.dir(error);
+          (error.data.message);
         })
     },
 
@@ -76,12 +65,11 @@ const app = {
         // #4  確認是否登入
         axios.post(`${url}/v2/api/user/check`, {}, { headers: { 'Authorization': token } })
           .then((res) => {
-            console.log(res);
+
           })
           .catch((error) => {
             alert("尚未登入會員，請重新登入！");
             window.location.href = 'index.html'; //跳轉到login頁面
-            console.dir(error);
             return;
           })
       } else {
@@ -99,7 +87,7 @@ const app = {
           this.pages = res.data.pagination;
         })
         .catch((error) => {
-          console.dir(error);
+          alert(error.data.message);
         })
     },
 
@@ -110,29 +98,29 @@ const app = {
           imagesUrl: [],
         };
         this.addNew = true;
-        //productModal.show();
         this.$refs.pdModal.openModal();
+        
       } else if (addNew === "edit") {
         this.addNew = false;
-        // 將所選產品的值複製給 newProduct
         this.newProduct = { ...product };
-        //productModal.show();
         this.$refs.pdModal.openModal();
+
       } else if (addNew === "delete") {
+        delProductModal.show();
         this.addNew = false;
         this.newProduct = { ...product };
-        delProductModal.show();
+        this.data_id = product.id;
+        this.data_name = product.title;
       }
     },
 
 
 
-    delProduct(){
-      axios.delete(`${url}/api/${path}/admin/product/${this.newProduct.id}`)
+    delProduct(id){
+      axios.delete(`${url}/api/${path}/admin/product/${id}`)
       .then((res) => {
         alert(res.data.message);
         this.getProducts(); //重新取得產品資料
-        delProductModal.hide();
       })
       .catch((error) => {
         alert(error);
@@ -145,11 +133,10 @@ const app = {
         .then((res) => {
           alert(res.data.message);
           this.getProducts();
-          //productModal.hide();
           this.$refs.pdModal.closeModal();
         })
         .catch((error) => {
-          alert(error.response.data.message);
+          alert(error.data.message);
         })
     },
 
@@ -159,7 +146,7 @@ const app = {
         .then((res) => {
           alert(res.data.message);
           this.getProducts();
-          //productModal.hide();
+          productModal.hide();
           this.$refs.pdModal.closeModal();
         })
         .catch((error) => {
@@ -180,7 +167,8 @@ const app = {
   components: {
     pagination,
     productModal,
-  }
+  },
+
 }
 
 // Use createApp to create the Vue app
